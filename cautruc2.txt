@@ -1,0 +1,43 @@
+Folder PATH listing for volume Acer
+Volume serial number is 3A37-FA3C
+C:\USERS\QUAN\DESKTOP\PROJECT_QTHTTT\APP
+|   favicon.ico
+|   globals.css
+|   layout.tsx
+|   page.tsx
+|   
++---api
+|   +---auth
+|   |   +---login
+|   |   |       route.ts
+|   |   |       
+|   |   \---register
+|   |           route.ts
+|   |           
+|   +---products
+|   |       route.ts
+|   |       
+|   \---test
+|           route.ts
+|           
+\---generated
+    \---prisma
+        |   browser.ts
+        |   client.ts
+        |   commonInputTypes.ts
+        |   enums.ts
+        |   models.ts
+        |   
+        +---internal
+        |       class.ts
+        |       prismaNamespace.ts
+        |       prismaNamespaceBrowser.ts
+        |       
+        \---models
+                carts.ts
+                cart_items.ts
+                orders.ts
+                order_items.ts
+                products.ts
+                users.ts
+                
