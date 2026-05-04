@@ -25,5 +25,12 @@ export async function POST(req: Request) {
     { expiresIn: "1d" }
   );
 
-  return Response.json({ token });
+  // ✅ Set cookie "session" để các API route đọc được (capture-order, v.v.)
+  const response = Response.json({ token });
+  response.headers.set(
+    "Set-Cookie",
+    `session=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Lax`
+  );
+
+  return response;
 }
