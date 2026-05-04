@@ -1,37 +1,40 @@
 "use client";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import Link from "next/link";
 
-function PaymentResultContent() {
+function PaymentResult() {
   const params = useSearchParams();
-  const responseCode = params.get("vnp_ResponseCode");
-  const amount = params.get("vnp_Amount");
-  const txnRef = params.get("vnp_TxnRef");
-  const bankCode = params.get("vnp_BankCode");
-
-  const isSuccess = responseCode === "00";
+  const status = params.get("status");
+  const orderID = params.get("orderID");
+  const isSuccess = status === "success";
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-      <div className={`p-8 rounded-xl shadow-lg ${isSuccess ? "bg-green-50" : "bg-red-50"}`}>
-        <h1 className={`text-2xl font-bold ${isSuccess ? "text-green-600" : "text-red-600"}`}>
-          {isSuccess ? "✅ Thanh toán thành công!" : "❌ Thanh toán thất bại!"}
-        </h1>
-        <div className="mt-4 space-y-2 text-gray-600">
-          <p>Mã đơn hàng: <strong>{txnRef}</strong></p>
-          <p>Số tiền: <strong>{Number(amount) / 100} VNĐ</strong></p>
-          <p>Ngân hàng: <strong>{bankCode}</strong></p>
-          <p>Mã phản hồi: <strong>{responseCode}</strong></p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
+        <div className="text-6xl mb-4">
+          {isSuccess ? "✅" : "❌"}
         </div>
+        <h1 className={`text-2xl font-bold mb-2 ${isSuccess ? "text-green-600" : "text-red-500"}`}>
+          {isSuccess ? "Thanh toán thành công!" : "Thanh toán bị hủy"}
+        </h1>
+        {orderID && (
+          <p className="text-gray-400 text-sm mb-6">
+            Order ID: <code className="bg-gray-100 px-2 py-0.5 rounded">{orderID}</code>
+          </p>
+        )}
+        <Link href="/" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+          Về trang chủ
+        </Link>
       </div>
     </div>
   );
 }
 
-export default function PaymentResult() {
+export default function Page() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Đang tải...</div>}>
-      <PaymentResultContent />
+    <Suspense fallback={<div>Đang xử lý...</div>}>
+      <PaymentResult />
     </Suspense>
   );
 }
