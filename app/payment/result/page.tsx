@@ -1,13 +1,13 @@
 "use client";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense } from "react";
 
-export default function PaymentResult() {
-  const params      = useSearchParams();
+function PaymentResultContent() {
+  const params = useSearchParams();
   const responseCode = params.get("vnp_ResponseCode");
-  const amount      = params.get("vnp_Amount");
-  const txnRef      = params.get("vnp_TxnRef");
-  const bankCode    = params.get("vnp_BankCode");
+  const amount = params.get("vnp_Amount");
+  const txnRef = params.get("vnp_TxnRef");
+  const bankCode = params.get("vnp_BankCode");
 
   const isSuccess = responseCode === "00";
 
@@ -25,5 +25,13 @@ export default function PaymentResult() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentResult() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Đang tải...</div>}>
+      <PaymentResultContent />
+    </Suspense>
   );
 }
