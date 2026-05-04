@@ -10,9 +10,17 @@ export async function POST(req: NextRequest) {
   const vnpUrl    = process.env.VNPAY_URL!;
   const returnUrl = process.env.VNPAY_RETURN_URL!;
 
-  const now        = new Date();
-  const createDate = formatDate(now);
+  const createDate = formatDate(new Date());
   const txnRef     = Date.now().toString();
+
+  // ✅ orderInfo không dấu, không ký tự đặc biệt
+  const safeOrderInfo = orderInfo
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .replace(/[^a-zA-Z0-9 ]/g, "")
+    .trim();
 
   const params: Record<string, string> = {
     vnp_Version:    "2.1.0",
@@ -23,7 +31,7 @@ export async function POST(req: NextRequest) {
     vnp_CurrCode:   "VND",
     vnp_IpAddr:     "127.0.0.1",
     vnp_Locale:     "vn",
-    vnp_OrderInfo:  orderInfo,
+    vnp_OrderInfo:  safeOrderInfo,
     vnp_OrderType:  "other",
     vnp_ReturnUrl:  returnUrl,
     vnp_TxnRef:     txnRef,
@@ -31,7 +39,7 @@ export async function POST(req: NextRequest) {
 
   const sortedParams = sortObject(params);
 
-  // ✅ Ký trên dữ liệu KHÔNG encode
+  // ✅ Ký KHÔNG encode
   const signData = Object.keys(sortedParams)
     .map((key) => `${key}=${sortedParams[key]}`)
     .join("&");
@@ -41,15 +49,21 @@ export async function POST(req: NextRequest) {
     .update(Buffer.from(signData, "utf-8"))
     .digest("hex");
 
-  // ✅ Build URL dùng URLSearchParams (tự handle encode đúng chuẩn)
+  // ✅ Build URL encode đúng chuẩn
   const urlParams = new URLSearchParams(sortedParams);
   urlParams.append("vnp_SecureHash", signature);
 
   const paymentUrl = `${vnpUrl}?${urlParams.toString()}`;
 
+  console.log("=== VNPAY DEBUG ===");
+  console.log("TmnCode:", tmnCode);
+  console.log("SecretKey length:", secretKey?.length);
+  console.log("OrderInfo (safe):", safeOrderInfo);
+  console.log("CreateDate:", createDate);
   console.log("SignData:", signData);
   console.log("Signature:", signature);
   console.log("PaymentUrl:", paymentUrl);
+  console.log("===================");
 
   return NextResponse.json({ paymentUrl });
 }
