@@ -2,18 +2,10 @@ import crypto from "crypto";
 
 export function sortObject(obj: Record<string, string | number>) {
   const sorted: Record<string, string> = {};
-  const str: string[] = [];
+  const keys = Object.keys(obj).sort();
 
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      str.push(encodeURIComponent(key));
-    }
-  }
-  str.sort();
-
-  for (let i = 0; i < str.length; i++) {
-    const decodedKey = decodeURIComponent(str[i]);
-    sorted[str[i]] = encodeURIComponent(String(obj[decodedKey])).replace(/%20/g, "+");
+  for (const key of keys) {
+    sorted[key] = String(obj[key]);
   }
 
   return sorted;
@@ -23,7 +15,7 @@ export function createVnpaySignature(
   sortedParams: Record<string, string>,
   secretKey: string
 ): string {
-  // ✅ Ký trên dữ liệu đã encode (key=encodedValue&...)
+  // Ký trên raw value (KHÔNG encode)
   const signData = Object.keys(sortedParams)
     .map((key) => `${key}=${sortedParams[key]}`)
     .join("&");
