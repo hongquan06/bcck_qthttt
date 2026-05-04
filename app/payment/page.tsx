@@ -26,17 +26,20 @@ export default function PaymentPage() {
                 body: JSON.stringify({ amount: "2.00" }),
               });
               const order = await res.json();
-              return order.id; // ✅ Đã sửa: orderID → id (PayPal API trả về field "id")
+              return order.id; // ✅ PayPal API trả về field "id"
             }}
             onApprove={async (data) => {
               const res = await fetch("/api/payment/paypal/capture-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                // Cookie "session" tự động gửi kèm theo fetch cùng domain
                 body: JSON.stringify({ orderID: data.orderID }),
               });
               const details = await res.json();
               if (details.status === "COMPLETED") {
-                router.push(`/payment/result?status=success&orderID=${data.orderID}`);
+                router.push(
+                  `/payment/result?status=success&orderID=${data.orderID}`
+                );
               }
             }}
             onCancel={() => {
