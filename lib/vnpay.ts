@@ -13,9 +13,9 @@ export function createVnpaySignature(
   sortedParams: Record<string, string>,
   secretKey: string
 ): string {
-  // ✅ encode giống URL thực tế gửi đi
+  // ✅ KHÔNG encode khi ký — đây là chuẩn VNPAY
   const signData = Object.keys(sortedParams)
-    .map((key) => `${key}=${encodeURIComponent(sortedParams[key])}`)
+    .map((key) => `${key}=${sortedParams[key]}`)
     .join("&");
 
   console.log("SignData:", signData);
