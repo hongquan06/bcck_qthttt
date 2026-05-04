@@ -26,7 +26,7 @@ export default function PaymentPage() {
                 body: JSON.stringify({ amount: "2.00" }),
               });
               const order = await res.json();
-              return order.orderID;
+              return order.id; // ✅ Đã sửa: orderID → id (PayPal API trả về field "id")
             }}
             onApprove={async (data) => {
               const res = await fetch("/api/payment/paypal/capture-order", {
