@@ -10,7 +10,7 @@ export default function PaymentPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        amount: 50000, // 100,000 VNĐ
+        amount: 50000,
         orderInfo: "Thanhtoandonhangtest",
       }),
     });
@@ -18,7 +18,7 @@ export default function PaymentPage() {
     const data = await res.json();
 
     if (data.paymentUrl) {
-      window.location.href = data.paymentUrl; // ✅ redirect sang VNPAY
+      window.location.href = data.paymentUrl;
     } else {
       alert("Tạo thanh toán thất bại");
       setLoading(false);
