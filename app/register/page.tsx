@@ -52,7 +52,7 @@ const handleRegister = async () => {
     console.log("REGISTER SUCCESS:", data);
 
     // chỉ redirect khi THÀNH CÔNG
-    router.push("/login");
+    router.push("/register-success");
 
   } catch (err) {
     setError("Lỗi server");
