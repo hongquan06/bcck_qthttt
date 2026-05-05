@@ -40,14 +40,20 @@ const handleRegister = async () => {
       }),
     });
 
+    // 🔥 QUAN TRỌNG: check trước
     if (!res.ok) {
-      const text = await res.text();
-      setError(text || "Đăng ký thất bại");
+      const msg = await res.text();
+      setError(msg || "Đăng ký thất bại");
       setLoading(false);
       return;
     }
 
+    const data = await res.json();
+    console.log("REGISTER SUCCESS:", data);
+
+    // chỉ redirect khi THÀNH CÔNG
     router.push("/login");
+
   } catch (err) {
     setError("Lỗi server");
   } finally {
