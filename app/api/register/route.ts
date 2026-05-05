@@ -3,7 +3,18 @@ import bcrypt from "bcrypt";
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    // đọc body an toàn (tránh lỗi JSON crash)
+    const body = await req.json().catch(() => null);
+
+    const email = body?.email;
+    const password = body?.password;
+
+    // validate input
+    if (!email || !password) {
+      return new Response("Missing email or password", {
+        status: 400,
+      });
+    }
 
     // check user tồn tại
     const existing = await prisma.users.findUnique({
@@ -11,7 +22,9 @@ export async function POST(req: Request) {
     });
 
     if (existing) {
-      return new Response("Email already exists", { status: 400 });
+      return new Response("Email already exists", {
+        status: 400,
+      });
     }
 
     // hash password
@@ -25,12 +38,18 @@ export async function POST(req: Request) {
       },
     });
 
-    // 🔥 loại bỏ password trước khi trả về
+    // remove password trước khi trả về
     const { password: _, ...safeUser } = user;
 
     return Response.json(safeUser);
-  } catch (err) {
-    console.log(err);
-    return new Response("Error", { status: 500 });
+  } catch (err: unknown) {
+    console.log("REGISTER ERROR:", err);
+
+    const message =
+      err instanceof Error ? err.message : "Internal Server Error";
+
+    return new Response(message, {
+      status: 500,
+    });
   }
 }
