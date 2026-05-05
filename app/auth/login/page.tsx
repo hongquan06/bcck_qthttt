@@ -1,41 +1,38 @@
 "use client";
-
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    setLoading(true);
-    setError("");
+const handleLogin = async () => {
+  setLoading(true);
+  setError("");
 
-    try {
-      const res = await signIn("credentials", {
-            email: email,
-            password: password,
-            redirect: false,
-          });
+  try {
+    const res = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.message);
-        return;
-      }
-
-      // login thành công
-      window.location.href = "/";
-    } catch (err) {
-      setError("Lỗi server");
-    } finally {
-      setLoading(false);
+    if (res?.error) {
+      setError("Sai email hoặc mật khẩu");
+      return;
     }
-  };
 
+    router.push("/");
+  } catch (err) {
+    setError("Lỗi server");
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-[400px] bg-white p-6 rounded-xl shadow">
