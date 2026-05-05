@@ -98,7 +98,10 @@ const handleLogin = async () => {
           <span className="text-blue-500 cursor-pointer">
             Quên mật khẩu?
           </span>
-          <span className="text-blue-500 cursor-pointer">
+          <span
+            className="text-blue-500 cursor-pointer"
+            onClick={() => router.push("/register")}
+          >
             Đăng ký
           </span>
         </div>
