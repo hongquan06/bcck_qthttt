@@ -13,44 +13,47 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async () => {
-    setError("");
+const handleRegister = async () => {
+  setError("");
 
-    // check password match
-    if (password !== confirmPassword) {
-      setError("Mật khẩu không khớp");
+  if (!email || !password || !confirmPassword) {
+    setError("Vui lòng nhập đầy đủ thông tin");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setError("Mật khẩu không khớp");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email.trim(),
+        password,
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      setError(text || "Đăng ký thất bại");
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        setError(text || "Đăng ký thất bại");
-        return;
-      }
-
-      // đăng ký xong -> chuyển sang login
-      router.push("/login");
-    } catch (err) {
-      setError("Lỗi server");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+    router.push("/login");
+  } catch (err) {
+    setError("Lỗi server");
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-[400px] bg-white p-6 rounded-xl shadow">
