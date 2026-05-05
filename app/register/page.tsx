@@ -111,7 +111,7 @@ const handleRegister = async () => {
 
         {/* Back to login */}
         <p
-          onClick={() => router.push("/login")}
+          onClick={() => router.push("/auth/login")}
           className="text-sm text-center mt-4 text-blue-500 cursor-pointer"
         >
           Đã có tài khoản? Đăng nhập
