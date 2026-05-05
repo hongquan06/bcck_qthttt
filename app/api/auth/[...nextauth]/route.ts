@@ -1,51 +1,106 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
 const handler = NextAuth({
   providers: [
+    // 🔵 Google login
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+
+    // 🔐 Email + Password login
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: {},
+        password: {},
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Thiếu email hoặc mật khẩu");
+        }
+
+        const user = await prisma.users.findUnique({
+          where: { email: credentials.email },
+        });
+
+        if (!user) {
+          throw new Error("User not found");
+        }
+
+        // user đăng ký bằng Google sẽ không có password
+        if (!user.password) {
+          throw new Error("Tài khoản này đăng nhập bằng Google");
+        }
+
+        const isMatch = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
+
+        if (!isMatch) {
+          throw new Error("Sai mật khẩu");
+        }
+
+        return {
+          id: user.id.toString(),
+          email: user.email,
+          role: user.role ?? "user",
+        };
+      },
+    }),
   ],
+
   secret: process.env.NEXTAUTH_SECRET,
+
   pages: {
     signIn: "/auth/login",
     error: "/auth/login",
   },
+
   callbacks: {
-    async signIn({ user }) {
-      try {
-        // Kiểm tra user đã tồn tại chưa
+    // 👉 chạy khi login thành công (Google)
+    async signIn({ user, account }) {
+      if (account?.provider === "google") {
         const existingUser = await prisma.users.findUnique({
           where: { email: user.email! },
         });
 
-        // Nếu chưa có thì tạo mới
         if (!existingUser) {
           await prisma.users.create({
             data: {
               email: user.email!,
-              // password null vì login bằng Google
-              // role mặc định là "user"
+              role: "user",
             },
           });
         }
-
-        return true; // ✅ cho phép đăng nhập
-      } catch (error) {
-        console.error("Lỗi lưu user vào DB:", error);
-        return false; // ❌ chặn đăng nhập nếu lỗi
       }
+
+      return true;
     },
 
-    async redirect({ url, baseUrl }) {
-      if (url.startsWith(baseUrl)) return url;
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      return baseUrl;
+    // 👉 lưu thêm data vào token
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
+      return token;
+    },
+
+    // 👉 trả về session cho FE
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+      }
+      return session;
     },
   },
 });
