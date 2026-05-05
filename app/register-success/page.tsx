@@ -18,7 +18,7 @@ export default function RegisterSuccessPage() {
         </p>
 
         <button
-          onClick={() => router.push("/login")}
+          onClick={() => router.push("/auth/login")}
           className="mt-6 w-full bg-orange-500 text-white p-3 rounded hover:bg-orange-600"
         >
           Quay lại đăng nhập
