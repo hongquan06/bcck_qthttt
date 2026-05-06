@@ -1,6 +1,9 @@
+'use client'
+
 import { Product, formatPrice } from '../../lib/data'
 import { ShoppingCart, Star, Heart } from 'lucide-react'
-import Link from 'next/link'
+import { useProductModal } from '@/lib/ProductModalContext'
+
 interface ProductCardProps {
   product: Product
   index?: number
@@ -13,11 +16,12 @@ const badgeColors: Record<string, string> = {
 }
 
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
+  const { openModal } = useProductModal()
   const badgeClass = badgeColors[product.badge || ''] || 'bg-brand-orange'
 
   return (
-<Link href={`/products/${product.id}`}>
     <div
+      onClick={() => openModal(product)}
       className="product-card group relative bg-brand-dark-2 rounded-2xl border border-white/5 hover:border-brand-orange/20 overflow-hidden flex flex-col cursor-pointer"
       style={{ animationDelay: `${index * 80}ms` }}
     >
@@ -34,7 +38,11 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         )}
       </div>
 
-      <button className="absolute top-3 right-3 z-10 w-8 h-8 rounded-lg bg-brand-dark/60 backdrop-blur-sm flex items-center justify-center text-brand-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all border border-white/10">
+      {/* Nút yêu thích — stopPropagation để không trigger openModal */}
+      <button
+        onClick={e => e.stopPropagation()}
+        className="absolute top-3 right-3 z-10 w-8 h-8 rounded-lg bg-brand-dark/60 backdrop-blur-sm flex items-center justify-center text-brand-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all border border-white/10"
+      >
         <Heart size={14} />
       </button>
 
@@ -69,13 +77,15 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           <div className="text-brand-muted text-xs line-through">{formatPrice(product.originalPrice)}</div>
         </div>
 
-        <button className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand-orange/10 hover:bg-brand-orange text-brand-orange hover:text-black font-semibold text-xs transition-all duration-200 border border-brand-orange/20 hover:border-brand-orange">
+        {/* Nút giỏ hàng — stopPropagation để không trigger openModal */}
+        <button
+          onClick={e => e.stopPropagation()}
+          className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand-orange/10 hover:bg-brand-orange text-brand-orange hover:text-black font-semibold text-xs transition-all duration-200 border border-brand-orange/20 hover:border-brand-orange"
+        >
           <ShoppingCart size={14} />
           <span>Thêm vào giỏ</span>
         </button>
       </div>
     </div>
-</Link>
-
   )
 }

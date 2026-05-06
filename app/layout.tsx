@@ -1,19 +1,22 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { ProductModalProvider } from '@/lib/ProductModalContext'
+import ModalRenderer from '@/components/ui/ModalRenderer'
 
 export const metadata: Metadata = {
   title: 'FPT Tech Shop — Công nghệ đỉnh cao',
   description: 'Mua sắm điện thoại, laptop, tablet và phụ kiện chính hãng tại FPT Tech Shop',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
-      <body>{children}</body>
+      <body>
+        <ProductModalProvider>
+          {children}
+          <ModalRenderer />
+        </ProductModalProvider>
+      </body>
     </html>
   )
 }

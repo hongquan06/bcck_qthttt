@@ -10,6 +10,8 @@ export interface Product {
   sold?: number
   isNew?: boolean
   category: string
+  description?: string  
+  stock?: number     
 }
 
 export interface Category {
