@@ -1,6 +1,6 @@
 import { Product, formatPrice } from '../../lib/data'
 import { ShoppingCart, Star, Heart } from 'lucide-react'
-
+import Link from 'next/link'
 interface ProductCardProps {
   product: Product
   index?: number
@@ -16,6 +16,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const badgeClass = badgeColors[product.badge || ''] || 'bg-brand-orange'
 
   return (
+<Link href={`/products/${product.id}`}>
     <div
       className="product-card group relative bg-brand-dark-2 rounded-2xl border border-white/5 hover:border-brand-orange/20 overflow-hidden flex flex-col cursor-pointer"
       style={{ animationDelay: `${index * 80}ms` }}
@@ -74,5 +75,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         </button>
       </div>
     </div>
+</Link>
+
   )
 }

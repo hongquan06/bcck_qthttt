@@ -30,7 +30,6 @@ function requireAdmin(req: Request): JwtPayload {
 // =======================
 export async function GET(req: Request) {
   try {
-    verifyToken(req); // chỉ cần đăng nhập
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
