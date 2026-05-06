@@ -22,7 +22,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   // 👉 THÊM GIỎ HÀNG
 async function addToCart(productId: number) {
   try {
-    const res = await fetch("/api/carts", {
+    const res = await fetch("/api/carts/add", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
