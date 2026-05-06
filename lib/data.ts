@@ -80,7 +80,7 @@ export const flashSaleProducts: Product[] = [
     price: 5990000,
     originalPrice: 7490000,
     discount: 20,
-    image: 'https://images.unsplash.com/photo-1606741965509-717ad89e6e3a?w=400&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=400&h=400&fit=crop',
     badge: '-20%',
     category: 'Phụ kiện',
     rating: 4.8,
