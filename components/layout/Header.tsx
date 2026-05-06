@@ -12,19 +12,21 @@ export default function Header() {
   const [cartCount, setCartCount] = useState(0)
   const { data: session, status } = useSession()
 
-  // Lấy số lượng sản phẩm trong giỏ hàng từ API
+  const displayCartCount = status === 'authenticated' ? cartCount : 0
+
   useEffect(() => {
-    if (status !== 'authenticated') {
-      setCartCount(0)
-      return
-    }
+    if (status !== 'authenticated') return
+
+    let cancelled = false
 
     fetch('/api/cart/count')
       .then(res => res.ok ? res.json() : null)
       .then(data => {
-        if (data?.count != null) setCartCount(data.count)
+        if (!cancelled && data?.count != null) setCartCount(data.count)
       })
       .catch(() => {})
+
+    return () => { cancelled = true }
   }, [status])
 
   return (
@@ -100,7 +102,6 @@ export default function Header() {
                 <Bell size={16} />
               </button>
 
-              {/* User button — đăng nhập / đã đăng nhập */}
               {status === 'authenticated' ? (
                 <button
                   onClick={() => signOut({ callbackUrl: '/' })}
@@ -122,16 +123,15 @@ export default function Header() {
                 </Link>
               )}
 
-              {/* Giỏ hàng — link đến /cart */}
               <Link
                 href="/cart"
                 className="relative flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-orange/10 hover:bg-brand-orange/20 text-brand-orange transition-all border border-brand-orange/20"
               >
                 <ShoppingCart size={18} />
                 <span className="hidden sm:block text-sm font-semibold">Giỏ hàng</span>
-                {cartCount > 0 && (
+                {displayCartCount > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-brand-orange text-black text-[11px] font-black flex items-center justify-center">
-                    {cartCount > 99 ? '99+' : cartCount}
+                    {displayCartCount > 99 ? '99+' : displayCartCount}
                   </span>
                 )}
               </Link>
@@ -149,17 +149,20 @@ export default function Header() {
         {/* Category nav */}
         <div className="hidden sm:block border-t border-white/5">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <nav className="flex items-center overflow-x-auto scroll-x">
-              {navItems.map((item) => (
-                <a
-                  key={item}
-                  href={`/${item.toLowerCase().replace(/\s+/g, '-')}`}
-                  className="shrink-0 px-4 py-2.5 text-sm text-brand-muted hover:text-brand-orange font-medium whitespace-nowrap transition-colors relative group"
-                >
-                  {item}
-                  <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-orange scale-x-0 group-hover:scale-x-100 transition-transform origin-left rounded-full" />
-                </a>
-              ))}
+            <nav className="flex items-center overflow-x-auto">
+              {navItems.map((item) => {
+                const slug = item.toLowerCase().replace(/\s+/g, '-')
+                return (
+                  <Link
+                    key={item}
+                    href={`/${slug}`}
+                    className="shrink-0 px-4 py-2.5 text-sm text-brand-muted hover:text-brand-orange font-medium whitespace-nowrap transition-colors relative group"
+                  >
+                    {item}
+                    <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-brand-orange scale-x-0 group-hover:scale-x-100 transition-transform origin-left rounded-full" />
+                  </Link>
+                )
+              })}
             </nav>
           </div>
         </div>
@@ -169,10 +172,14 @@ export default function Header() {
       {mobileOpen && (
         <div className="sm:hidden bg-brand-dark-2 border-t border-white/5 shadow-2xl">
           {navItems.map(item => (
-            <a key={item} href="#" className="flex items-center gap-3 px-6 py-3.5 text-brand-muted hover:text-white hover:bg-white/5 border-b border-white/5 text-sm">
+            <Link
+              key={item}
+              href={`/${item.toLowerCase().replace(/\s+/g, '-')}`}
+              className="flex items-center gap-3 px-6 py-3.5 text-brand-muted hover:text-white hover:bg-white/5 border-b border-white/5 text-sm"
+            >
               <ChevronDown size={14} className="-rotate-90" />
               {item}
-            </a>
+            </Link>
           ))}
         </div>
       )}
