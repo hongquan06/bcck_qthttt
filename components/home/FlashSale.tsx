@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { Zap, ArrowRight } from 'lucide-react'
-import { flashSaleProducts } from '../../lib/data'
 import ProductCard from '../ui/ProductCard'
+import { Product } from '@/types'
+import { DBProduct } from '@/types/db'
 
 function useCountdown(targetHours: number) {
   const [timeLeft, setTimeLeft] = useState({ h: targetHours, m: 45, s: 30 })
-
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
@@ -21,7 +21,6 @@ function useCountdown(targetHours: number) {
     }, 1000)
     return () => clearInterval(timer)
   }, [])
-
   return timeLeft
 }
 
@@ -43,6 +42,27 @@ function TimeSegment({ value, label }: { value: number; label: string }) {
 
 export default function FlashSale() {
   const time = useCountdown(2)
+  const [products, setProducts] = useState<Product[]>([])
+
+  useEffect(() => {
+    fetch('/api/products')
+      .then(res => res.json())
+      .then((data: DBProduct[]) => {       // ✅ type ở đây
+      const mapped = data.slice(0, 6).map((p) => ({  // ✅ bỏ type ở map
+          id: p.id,
+          name: p.name,
+          price: Number(p.price),
+          originalPrice: Number(p.price),
+          discount: 0,
+          image: p.image_url ?? '',
+          category: p.category ?? 'Sản phẩm',
+          description: p.description ?? '',
+          stock: p.stock ?? 0,
+          badge: 'HOT',
+        }))
+        setProducts(mapped)
+      })
+  }, [])
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
@@ -70,9 +90,8 @@ export default function FlashSale() {
         </a>
       </div>
 
-      {/* Sold progress bars */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-        {flashSaleProducts.map((p) => {
+        {products.map((p) => {
           const soldPct = Math.min(((p.sold || 0) / 5000) * 100, 95)
           return (
             <div key={p.id} className="shrink-0 flex-1 min-w-0">
@@ -86,7 +105,7 @@ export default function FlashSale() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        {flashSaleProducts.map((product, i) => (
+        {products.map((product, i) => (
           <ProductCard key={product.id} product={product} index={i} />
         ))}
       </div>
