@@ -1,13 +1,31 @@
 'use client'
 
-import { useState } from 'react'
-import { Search, ShoppingCart, User, Menu, X, Bell, ChevronDown, Zap } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, ShoppingCart, User, Menu, X, Bell, ChevronDown, Zap, LogOut } from 'lucide-react'
 import { navItems } from '../../lib/data'
 import Link from 'next/link'
+import { useSession, signOut } from 'next-auth/react'
+
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
-  const [cartCount] = useState(3)
+  const [cartCount, setCartCount] = useState(0)
+  const { data: session, status } = useSession()
+
+  // Lấy số lượng sản phẩm trong giỏ hàng từ API
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      setCartCount(0)
+      return
+    }
+
+    fetch('/api/cart/count')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.count != null) setCartCount(data.count)
+      })
+      .catch(() => {})
+  }, [status])
 
   return (
     <header className="sticky top-0 z-50">
@@ -81,17 +99,43 @@ export default function Header() {
               <button className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-brand-muted hover:text-white hover:bg-white/5 transition-all text-sm">
                 <Bell size={16} />
               </button>
-              <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-brand-muted hover:text-white hover:bg-white/5 transition-all">
-                <User size={18} />
-                <span className="hidden sm:block text-sm font-medium">Đăng nhập</span>
-              </button>
-              <button className="relative flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-orange/10 hover:bg-brand-orange/20 text-brand-orange transition-all border border-brand-orange/20">
+
+              {/* User button — đăng nhập / đã đăng nhập */}
+              {status === 'authenticated' ? (
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-brand-muted hover:text-white hover:bg-white/5 transition-all"
+                  title="Đăng xuất"
+                >
+                  <LogOut size={18} />
+                  <span className="hidden sm:block text-sm font-medium truncate max-w-[100px]">
+                    {session.user?.email?.split('@')[0]}
+                  </span>
+                </button>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-brand-muted hover:text-white hover:bg-white/5 transition-all"
+                >
+                  <User size={18} />
+                  <span className="hidden sm:block text-sm font-medium">Đăng nhập</span>
+                </Link>
+              )}
+
+              {/* Giỏ hàng — link đến /cart */}
+              <Link
+                href="/cart"
+                className="relative flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-orange/10 hover:bg-brand-orange/20 text-brand-orange transition-all border border-brand-orange/20"
+              >
                 <ShoppingCart size={18} />
                 <span className="hidden sm:block text-sm font-semibold">Giỏ hàng</span>
-                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-brand-orange text-black text-[11px] font-black flex items-center justify-center">
-                  {cartCount}
-                </span>
-              </button>
+                {cartCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-brand-orange text-black text-[11px] font-black flex items-center justify-center">
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </Link>
+
               <button
                 className="sm:hidden p-2 text-brand-muted hover:text-white"
                 onClick={() => setMobileOpen(!mobileOpen)}

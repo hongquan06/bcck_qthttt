@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaClient } from "@prisma/client";
@@ -6,15 +6,13 @@ import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
-const handler = NextAuth({
+export const authOptions: AuthOptions = {
   providers: [
-    // 🔵 Google login
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
 
-    // 🔐 Email + Password login
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -30,23 +28,11 @@ const handler = NextAuth({
           where: { email: credentials.email },
         });
 
-        if (!user) {
-          throw new Error("User not found");
-        }
+        if (!user) throw new Error("User not found");
+        if (!user.password) throw new Error("Tài khoản này đăng nhập bằng Google");
 
-        // user đăng ký bằng Google sẽ không có password
-        if (!user.password) {
-          throw new Error("Tài khoản này đăng nhập bằng Google");
-        }
-
-        const isMatch = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isMatch) {
-          throw new Error("Sai mật khẩu");
-        }
+        const isMatch = await bcrypt.compare(credentials.password, user.password);
+        if (!isMatch) throw new Error("Sai mật khẩu");
 
         return {
           id: user.id.toString(),
@@ -65,27 +51,28 @@ const handler = NextAuth({
   },
 
   callbacks: {
-    // 👉 chạy khi login thành công (Google)
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        const existingUser = await prisma.users.findUnique({
+        let dbUser = await prisma.users.findUnique({
           where: { email: user.email! },
         });
 
-        if (!existingUser) {
-          await prisma.users.create({
+        if (!dbUser) {
+          dbUser = await prisma.users.create({
             data: {
               email: user.email!,
               role: "user",
             },
           });
         }
+
+        user.id = dbUser.id.toString();
+        user.role = dbUser.role ?? "user";
       }
 
       return true;
     },
 
-    // 👉 lưu thêm data vào token
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -94,15 +81,15 @@ const handler = NextAuth({
       return token;
     },
 
-    // 👉 trả về session cho FE
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        session.user.id = token.id;
+        session.user.role = token.role;
       }
       return session;
     },
   },
-});
+};
 
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
