@@ -1,3 +1,5 @@
+// Thêm dòng này vào đầu lib/data.ts
+export type { Product, Category, BannerSlide } from '@/types'
 import { Product, Category, BannerSlide } from '@/types'
 
 export const categories: Category[] = [
