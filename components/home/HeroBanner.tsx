@@ -42,17 +42,20 @@ export default function HeroBanner() {
   const [active, setActive] = useState(0)
   const [animating, setAnimating] = useState(false)
 
-  useEffect(() => {
-    const timer = setInterval(() => goTo((active + 1) % slides.length), 5000)
-    return () => clearInterval(timer)
-  }, [active])
-
+  // ✅ Khai báo goTo TRƯỚC useEffect
   const goTo = (idx: number) => {
     if (animating) return
     setAnimating(true)
     setActive(idx)
     setTimeout(() => setAnimating(false), 600)
   }
+
+  useEffect(() => {
+    const timer = setInterval(() => goTo((active + 1) % slides.length), 5000)
+    return () => clearInterval(timer)
+  }, [active])
+
+  // ... phần còn lại giữ nguyên
 
   const slide = slides[active]
 

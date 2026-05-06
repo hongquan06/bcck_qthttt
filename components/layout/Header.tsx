@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { Search, ShoppingCart, User, Menu, X, Bell, ChevronDown, Zap } from 'lucide-react'
-import { navItems } from '@lib/data'
-
+import { navItems } from '../../lib/data'
+import Link from 'next/link'
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
@@ -32,7 +32,7 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center gap-4 h-16">
             {/* Logo */}
-            <a href="/" className="flex items-center gap-2 shrink-0 group">
+            <Link href="/" className="flex items-center gap-2 shrink-0 group">
               <div className="relative">
                 <div className="w-9 h-9 rounded-lg bg-brand-orange flex items-center justify-center font-display font-black text-black text-sm group-hover:scale-105 transition-transform">
                   FPT
@@ -43,7 +43,7 @@ export default function Header() {
                 <div className="font-display font-bold text-white text-base leading-tight tracking-tight">TECH</div>
                 <div className="text-[10px] text-brand-orange font-semibold tracking-widest leading-none">SHOP</div>
               </div>
-            </a>
+            </Link>
 
             {/* Search */}
             <div className={`flex-1 max-w-xl relative transition-all duration-300 ${searchFocused ? 'max-w-2xl' : ''}`}>
