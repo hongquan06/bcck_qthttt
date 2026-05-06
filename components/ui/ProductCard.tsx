@@ -20,31 +20,30 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const badgeClass = badgeColors[product.badge || ''] || 'bg-brand-orange'
 
   // 👉 THÊM GIỎ HÀNG
-  async function addToCart(productId: number) {
-    try {
-      const res = await fetch("/api/carts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          productId,
-          quantity: 1,
-        }),
-      })
+async function addToCart(productId: number) {
+  try {
+    const res = await fetch("/api/carts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        product_id: productId, // ✅ FIX Ở ĐÂY
+        quantity: 1,
+      }),
+    })
 
-      if (!res.ok) {
-        const text = await res.text()
-        throw new Error(text)
-      }
-
-      alert("✅ Đã thêm vào giỏ hàng")
-    } catch (err) {
-      console.error(err)
-      alert("❌ Thêm giỏ hàng thất bại")
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text)
     }
-  }
 
+    alert("✅ Đã thêm vào giỏ hàng")
+  } catch (err) {
+    console.error(err)
+    alert("❌ Thêm giỏ hàng thất bại")
+  }
+}
   return (
     <div
       onClick={() => openModal(product)}
