@@ -55,7 +55,6 @@ export default function HeroBanner() {
     return () => clearInterval(timer)
   }, [active])
 
-  // ... phần còn lại giữ nguyên
 
   const slide = slides[active]
 
