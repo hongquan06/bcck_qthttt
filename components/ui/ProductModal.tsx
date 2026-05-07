@@ -67,7 +67,7 @@ export default function ProductModal({ product, onClose }: Props) {
       }
 
       onClose()
-      router.push('/checkout') // ✅ Chuyển sang trang checkout
+      router.push('/cart') // ✅ Chuyển sang trang checkout
     } catch (err) {
       console.error(err)
       alert('❌ Có lỗi xảy ra, vui lòng thử lại')
