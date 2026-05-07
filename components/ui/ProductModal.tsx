@@ -2,7 +2,8 @@
 'use client'
 
 import { X, ShoppingCart, Zap } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Product } from '@/types/index'
 
 type Props = {
@@ -11,6 +12,10 @@ type Props = {
 }
 
 export default function ProductModal({ product, onClose }: Props) {
+  const router = useRouter()
+  const [cartLoading, setCartLoading] = useState(false)
+  const [buyLoading, setBuyLoading] = useState(false)
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', handler)
@@ -21,6 +26,55 @@ export default function ProductModal({ product, onClose }: Props) {
 
   const price = Number(product.price).toLocaleString('vi-VN') + ' ₫'
   const originalPrice = Number(product.originalPrice).toLocaleString('vi-VN') + ' ₫'
+
+  // ✅ Hàm thêm vào giỏ hàng
+  async function handleAddToCart() {
+    setCartLoading(true)
+    try {
+      const res = await fetch('/api/carts/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: product!.id, quantity: 1 }),
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text)
+      }
+
+      alert('✅ Đã thêm vào giỏ hàng')
+    } catch (err) {
+      console.error(err)
+      alert('❌ Thêm giỏ hàng thất bại')
+    } finally {
+      setCartLoading(false)
+    }
+  }
+
+  // ✅ Hàm mua ngay — thêm vào giỏ rồi chuyển sang trang checkout
+  async function handleBuyNow() {
+    setBuyLoading(true)
+    try {
+      const res = await fetch('/api/carts/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: product!.id, quantity: 1 }),
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text)
+      }
+
+      onClose()
+      router.push('/checkout') // ✅ Chuyển sang trang checkout
+    } catch (err) {
+      console.error(err)
+      alert('❌ Có lỗi xảy ra, vui lòng thử lại')
+    } finally {
+      setBuyLoading(false)
+    }
+  }
 
   return (
     <div
@@ -39,7 +93,7 @@ export default function ProductModal({ product, onClose }: Props) {
           <X size={16} className="text-white" />
         </button>
 
-        {/* Ảnh — dùng product.image thay vì image_url */}
+        {/* Ảnh */}
         <div className="w-full h-56 bg-brand-dark-3 overflow-hidden">
           <img
             src={product.image}
@@ -62,7 +116,6 @@ export default function ProductModal({ product, onClose }: Props) {
             {product.category && (
               <p className="text-brand-muted text-xs uppercase tracking-wider mt-0.5">{product.category}</p>
             )}
-            {/* description nếu có */}
             {product.description && (
               <p className="text-brand-muted text-sm mt-2">{product.description}</p>
             )}
@@ -79,7 +132,7 @@ export default function ProductModal({ product, onClose }: Props) {
             )}
           </div>
 
-          {/* Stock nếu có */}
+          {/* Stock */}
           {product.stock !== undefined && (
             <span className={`text-xs px-2 py-1 rounded-full font-semibold inline-block ${
               product.stock > 0
@@ -90,13 +143,23 @@ export default function ProductModal({ product, onClose }: Props) {
             </span>
           )}
 
-          {/* Nút hành động */}
+          {/* ✅ Nút hành động — đã có onClick */}
           <div className="flex gap-2 pt-1">
-            <button className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-brand-orange text-black font-bold text-sm hover:brightness-110 transition">
-              <Zap size={15} className="fill-black" /> Mua ngay
+            <button
+              onClick={handleBuyNow}
+              disabled={buyLoading || product.stock === 0}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-brand-orange text-black font-bold text-sm hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Zap size={15} className="fill-black" />
+              {buyLoading ? 'Đang xử lý...' : 'Mua ngay'}
             </button>
-            <button className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-white/10 text-white font-semibold text-sm hover:bg-white/5 transition">
-              <ShoppingCart size={15} /> Thêm vào giỏ
+            <button
+              onClick={handleAddToCart}
+              disabled={cartLoading || product.stock === 0}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-white/10 text-white font-semibold text-sm hover:bg-white/5 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ShoppingCart size={15} />
+              {cartLoading ? 'Đang thêm...' : 'Thêm vào giỏ'}
             </button>
           </div>
         </div>
