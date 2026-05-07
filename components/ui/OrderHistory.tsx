@@ -1,0 +1,144 @@
+'use client'
+
+import { Package, Clock, CheckCircle, XCircle, Truck, ShoppingBag } from 'lucide-react'
+
+type OrderItem = {
+  id: number
+  quantity: number | null
+  price: any
+  products: {
+    id: number
+    name: string
+    image_url: string | null
+  } | null
+}
+
+type Order = {
+  id: number
+  total_price: any
+  status: string | null
+  created_at: Date | null
+  order_items: OrderItem[]
+}
+
+type Props = {
+  orders: Order[]
+}
+
+const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+  pending:   { label: 'Chờ xác nhận', color: 'text-amber-400 bg-amber-400/10 border-amber-400/20',   icon: <Clock size={13} /> },
+  paid:      { label: 'Đã thanh toán', color: 'text-blue-400 bg-blue-400/10 border-blue-400/20',     icon: <CheckCircle size={13} /> },
+  shipped:   { label: 'Đang giao',     color: 'text-purple-400 bg-purple-400/10 border-purple-400/20', icon: <Truck size={13} /> },
+  completed: { label: 'Hoàn thành',   color: 'text-green-400 bg-green-400/10 border-green-400/20',   icon: <CheckCircle size={13} /> },
+  cancelled: { label: 'Đã hủy',       color: 'text-red-400 bg-red-400/10 border-red-400/20',         icon: <XCircle size={13} /> },
+}
+
+function formatPrice(price: any) {
+  return new Intl.NumberFormat('vi-VN').format(Number(price)) + 'đ'
+}
+
+function formatDate(date: Date | null) {
+  if (!date) return ''
+  return new Date(date).toLocaleDateString('vi-VN', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+export default function OrderHistory({ orders }: Props) {
+  if (orders.length === 0) {
+    return (
+      <main className="min-h-screen bg-brand-dark pt-8 pb-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <h1 className="text-white font-bold text-2xl mb-8 flex items-center gap-3">
+            <ShoppingBag className="text-brand-orange" size={24} />
+            Lịch sử đơn hàng
+          </h1>
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-brand-dark-2 border border-white/10 flex items-center justify-center mb-4">
+              <Package size={28} className="text-brand-muted" />
+            </div>
+            <h3 className="text-white font-bold text-lg mb-2">Chưa có đơn hàng nào</h3>
+            <p className="text-brand-muted text-sm">Hãy mua sắm và quay lại đây nhé!</p>
+            <a href="/"
+              className="mt-6 px-6 py-3 rounded-xl bg-brand-orange text-black font-bold text-sm hover:brightness-110 transition">
+              Mua sắm ngay
+            </a>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="min-h-screen bg-brand-dark pt-8 pb-20">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+
+        <h1 className="text-white font-bold text-2xl mb-8 flex items-center gap-3">
+          <ShoppingBag className="text-brand-orange" size={24} />
+          Lịch sử đơn hàng
+          <span className="text-sm font-normal text-brand-muted">({orders.length} đơn)</span>
+        </h1>
+
+        <div className="space-y-4">
+          {orders.map((order) => {
+            const st = statusConfig[order.status ?? 'pending'] ?? statusConfig.pending
+            return (
+              <div key={order.id}
+                className="bg-brand-dark-2 rounded-2xl border border-white/5 overflow-hidden">
+
+                {/* Header đơn hàng */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+                  <div className="flex items-center gap-3">
+                    <span className="text-white font-bold text-sm">Đơn #{order.id}</span>
+                    <span className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${st.color}`}>
+                      {st.icon} {st.label}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-brand-orange font-bold">{formatPrice(order.total_price)}</div>
+                    <div className="text-brand-muted text-xs mt-0.5">{formatDate(order.created_at)}</div>
+                  </div>
+                </div>
+
+                {/* Danh sách sản phẩm */}
+                <div className="divide-y divide-white/5">
+                  {order.order_items.map((item) => (
+                    <div key={item.id} className="flex items-center gap-4 px-5 py-3">
+                      <div className="w-12 h-12 rounded-xl bg-brand-dark-3 overflow-hidden shrink-0">
+                        {item.products?.image_url ? (
+                          <img
+                            src={item.products.image_url}
+                            alt={item.products.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package size={16} className="text-brand-muted" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">
+                          {item.products?.name ?? 'Sản phẩm đã xóa'}
+                        </p>
+                        <p className="text-brand-muted text-xs mt-0.5">
+                          x{item.quantity} · {formatPrice(item.price)}
+                        </p>
+                      </div>
+                      <div className="text-white font-semibold text-sm shrink-0">
+                        {formatPrice(Number(item.price) * Number(item.quantity))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+            )
+          })}
+        </div>
+
+      </div>
+    </main>
+  )
+}
