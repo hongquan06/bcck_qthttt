@@ -12,7 +12,7 @@ export default async function OrdersPage() {
     redirect("/auth/login");
   }
 
-  const orders = await prisma.orders.findMany({
+  const rawOrders = await prisma.orders.findMany({
     where: { user_id: userId },
     orderBy: { created_at: "desc" },
     include: {
@@ -21,6 +21,16 @@ export default async function OrdersPage() {
       },
     },
   });
+
+  // Convert Decimal → number để serialize an toàn xuống Client Component
+  const orders = rawOrders.map((order) => ({
+    ...order,
+    total_price: order.total_price ? Number(order.total_price) : null,
+    order_items: order.order_items.map((item) => ({
+      ...item,
+      price: item.price ? Number(item.price) : null,
+    })),
+  }));
 
   return <OrderHistory orders={orders} />;
 }

@@ -4,13 +4,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { Package, Clock, CheckCircle, XCircle, Truck, ShoppingBag, Loader2 } from 'lucide-react'
-import { Prisma } from '@prisma/client'
-import { cancelOrder } from '@/actions/cancelOrder' // chỉnh lại path nếu khác
+import { cancelOrder } from '@/actions/cancelOrder'
 
 type OrderItem = {
   id: number
   quantity: number | null
-  price: Prisma.Decimal | null
+  price: number | null
   products: {
     id: number
     name: string
@@ -20,7 +19,7 @@ type OrderItem = {
 
 type Order = {
   id: number
-  total_price: Prisma.Decimal | null
+  total_price: number | null
   status: string | null
   created_at: Date | null
   order_items: OrderItem[]
@@ -38,17 +37,16 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
   cancelled: { label: 'Đã hủy',       color: 'text-red-400 bg-red-400/10 border-red-400/20',          icon: <XCircle size={13} /> },
 }
 
-// Trạng thái khách hàng được phép hủy
 const CANCELLABLE_STATUSES = ['pending', 'paid']
 
-function formatPrice(price: Prisma.Decimal | null) {
+function formatPrice(price: number | null) {
   if (price == null) return '0đ'
-  return new Intl.NumberFormat('vi-VN').format(price.toNumber()) + 'đ'
+  return new Intl.NumberFormat('vi-VN').format(price) + 'đ'
 }
 
-function formatItemTotal(price: Prisma.Decimal | null, quantity: number | null) {
+function formatItemTotal(price: number | null, quantity: number | null) {
   if (price == null) return '0đ'
-  return new Intl.NumberFormat('vi-VN').format(price.toNumber() * (quantity ?? 0)) + 'đ'
+  return new Intl.NumberFormat('vi-VN').format(price * (quantity ?? 0)) + 'đ'
 }
 
 function formatDate(date: Date | null) {
@@ -59,7 +57,6 @@ function formatDate(date: Date | null) {
   })
 }
 
-// Component con để quản lý state hủy đơn riêng cho từng đơn
 function OrderCard({ order }: { order: Order }) {
   const [status, setStatus] = useState(order.status ?? 'pending')
   const [error, setError] = useState<string | null>(null)
@@ -136,9 +133,7 @@ function OrderCard({ order }: { order: Order }) {
       {/* Footer: nút hủy + thông báo lỗi */}
       {(canCancel || error) && (
         <div className="px-5 py-3 border-t border-white/5 flex items-center justify-between gap-3">
-          {error && (
-            <p className="text-red-400 text-xs">{error}</p>
-          )}
+          {error && <p className="text-red-400 text-xs">{error}</p>}
           {!error && <span />}
 
           {canCancel && !showConfirm && (
@@ -206,7 +201,6 @@ export default function OrderHistory({ orders }: Props) {
   return (
     <main className="min-h-screen bg-brand-dark pt-8 pb-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
-
         <h1 className="text-white font-bold text-2xl mb-8 flex items-center gap-3">
           <ShoppingBag className="text-brand-orange" size={24} />
           Lịch sử đơn hàng
@@ -218,7 +212,6 @@ export default function OrderHistory({ orders }: Props) {
             <OrderCard key={order.id} order={order} />
           ))}
         </div>
-
       </div>
     </main>
   )
