@@ -5,11 +5,65 @@ import { v4 as uuidv4 } from "uuid";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
+// ✅ GET /api/carts — Lấy giỏ hàng (dùng cho trang payment)
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+    const userId = Number(session?.user?.id);
+
+    if (!session?.user?.id || isNaN(userId)) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const cart = await prisma.carts.findFirst({
+      where: { user_id: userId },
+      include: {
+        cart_items: {
+          include: {
+            products: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                image_url: true,
+                stock: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!cart) {
+      return Response.json({ cart_id: null, items: [], total: 0 });
+    }
+
+    const total = cart.cart_items.reduce((sum, item) => {
+      const price = Number(item.products?.price ?? 0);
+      const quantity = item.quantity ?? 0;
+      return sum + price * quantity;
+    }, 0);
+
+    return Response.json({
+      cart_id: cart.id,
+      items: cart.cart_items.map((item) => ({
+        cart_item_id: item.id,
+        quantity: item.quantity,
+        product: item.products,
+        subtotal: Number(item.products?.price ?? 0) * (item.quantity ?? 0),
+      })),
+      total,
+    });
+  } catch {
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+// POST /api/carts — Thêm sản phẩm vào giỏ hàng
 export async function POST(req: Request) {
   try {
     const cookieStore = await cookies();
 
-    // ✅ Dùng getServerSession thay vì verifyToken
     let userId: number | null = null;
     try {
       const session = await getServerSession(authOptions);
@@ -19,7 +73,6 @@ export async function POST(req: Request) {
       userId = null;
     }
 
-    // Lấy hoặc tạo sessionId cho guest
     let sessionId = cookieStore.get("session_id")?.value ?? null;
     if (!userId && !sessionId) {
       sessionId = uuidv4();

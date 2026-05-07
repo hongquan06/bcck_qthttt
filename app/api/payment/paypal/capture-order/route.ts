@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import jwt from "jsonwebtoken";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 async function getAccessToken() {
   const credentials = Buffer.from(
@@ -22,21 +23,20 @@ async function getAccessToken() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { orderID } = await req.json();
-
-    // ── 1. Lấy user_id từ cookie "session" ──────────────────────────
-    const token = req.cookies.get("session")?.value;
-    if (!token) {
+    // ✅ Dùng getServerSession thay vì jwt.verify
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      id: number;
-      role: string;
-    };
-    const userId = decoded.id;
+    const userId = Number(session.user.id);
+    const { orderID } = await req.json();
 
-    // ── 2. Capture order từ PayPal ───────────────────────────────────
+    if (!orderID) {
+      return NextResponse.json({ error: "Missing orderID" }, { status: 400 });
+    }
+
+    // ✅ Capture order từ PayPal
     const accessToken = await getAccessToken();
 
     const res = await fetch(
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     const data = await res.json();
 
-    // ── 3. Nếu PayPal COMPLETED → lưu vào database ──────────────────
+    // ✅ Nếu PayPal COMPLETED → lưu order vào database + xóa cart
     if (data.status === "COMPLETED") {
       const totalPrice =
         data.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value ?? "0";
@@ -64,14 +64,22 @@ export async function POST(req: NextRequest) {
           status: "paid",
         },
       });
+
+      // ✅ Xóa giỏ hàng sau khi thanh toán thành công
+      const cart = await prisma.carts.findFirst({
+        where: { user_id: userId },
+      });
+
+      if (cart) {
+        await prisma.cart_items.deleteMany({
+          where: { cart_id: cart.id },
+        });
+      }
     }
 
     return NextResponse.json(data);
   } catch (error) {
     console.error("Capture order error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
