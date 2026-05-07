@@ -13,11 +13,11 @@ export async function GET(req: Request) {
     const products = await prisma.products.findMany({
       where: {
         OR: [
-          { name: { contains: q, mode: "insensitive" } },
-          { description: { contains: q, mode: "insensitive" } },
+          { name: { contains: q } },
+          { description: { contains: q } },
         ],
       },
-      take: 20, // tối đa 20 kết quả
+      take: 20,
     });
 
     return Response.json(products);
