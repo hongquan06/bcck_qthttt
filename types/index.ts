@@ -1,18 +1,18 @@
 export interface Product {
-  id: number
+  id: string | number  
   name: string
   price: number
   originalPrice: number
   discount: number
   image: string
-  image_url?: string 
+  image_url?: string
   badge?: string
   rating?: number
   sold?: number
   isNew?: boolean
   category: string
-  description?: string  
-  stock?: number     
+  description?: string
+  stock?: number
 }
 
 export interface Category {
