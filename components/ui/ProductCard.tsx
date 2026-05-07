@@ -1,8 +1,10 @@
+// components/ui/ProductCard.tsx
 'use client'
 
 import { Product, formatPrice } from '../../lib/data'
 import { ShoppingCart, Star, Heart } from 'lucide-react'
 import { useProductModal } from '@/lib/ProductModalContext'
+import { useToast } from '@/components/ui/Toast' // ✅ import toast
 
 interface ProductCardProps {
   product: Product
@@ -17,33 +19,30 @@ const badgeColors: Record<string, string> = {
 
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { openModal } = useProductModal()
+  const { showToast } = useToast() // ✅ dùng toast thay alert
   const badgeClass = badgeColors[product.badge || ''] || 'bg-brand-orange'
 
-  // 👉 THÊM GIỎ HÀNG
-async function addToCart(productId: number) {
-  try {
-    const res = await fetch("/api/carts/add", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        product_id: productId, // ✅ FIX Ở ĐÂY
-        quantity: 1,
-      }),
-    })
+  // ✅ Thêm giỏ hàng — dùng toast thay alert
+  async function addToCart(productId: number) {
+    try {
+      const res = await fetch('/api/carts/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: productId, quantity: 1 }),
+      })
 
-    if (!res.ok) {
-      const text = await res.text()
-      throw new Error(text)
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text)
+      }
+
+      showToast('Đã thêm vào giỏ hàng', 'success') // ✅ thay alert
+    } catch (err) {
+      console.error(err)
+      showToast('Thêm giỏ hàng thất bại', 'error') // ✅ thay alert
     }
-
-    alert("✅ Đã thêm vào giỏ hàng")
-  } catch (err) {
-    console.error(err)
-    alert("❌ Thêm giỏ hàng thất bại")
   }
-}
+
   return (
     <div
       onClick={() => openModal(product)}
@@ -124,11 +123,11 @@ async function addToCart(productId: number) {
           </div>
         </div>
 
-        {/* 👉 NÚT THÊM GIỎ */}
+        {/* Nút thêm giỏ */}
         <button
           onClick={e => {
             e.stopPropagation()
-            addToCart(Number(product.id))
+            addToCart(product.id)
           }}
           className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand-orange/10 hover:bg-brand-orange text-brand-orange hover:text-black font-semibold text-xs transition-all duration-200 border border-brand-orange/20 hover:border-brand-orange"
         >
