@@ -23,12 +23,12 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const badgeClass = badgeColors[product.badge || ''] || 'bg-brand-orange'
 
   // ✅ Thêm giỏ hàng — dùng toast thay alert
-  async function addToCart(productId: number) {
+ async function addToCart(productId: string | number) {
     try {
       const res = await fetch('/api/carts/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: productId, quantity: 1 }),
+        body: JSON.stringify({ product_id: Number(productId), quantity: 1 }),
       })
 
       if (!res.ok) {
