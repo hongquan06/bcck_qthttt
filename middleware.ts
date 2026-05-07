@@ -1,15 +1,24 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Chỉ protect admin routes
   if (pathname.startsWith("/admin")) {
-    const session = req.cookies.get("session")?.value;
+    const token = await getToken({
+      req,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
 
-    if (!session) {
-      return NextResponse.redirect(new URL("/login", req.url));
+    // Chưa đăng nhập → về trang login
+    if (!token) {
+      return NextResponse.redirect(new URL("/auth/login", req.url));
+    }
+
+    // Đã đăng nhập nhưng không phải admin → về trang chủ
+    if (token.role !== "admin") {
+      return NextResponse.redirect(new URL("/", req.url));
     }
   }
 

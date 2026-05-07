@@ -19,18 +19,27 @@ export default function LoginPage() {
         password,
         redirect: false,
       });
+
       if (res?.error) {
         setError("Sai email hoặc mật khẩu");
         return;
       }
-      router.push("/");
-    } catch (err) {
+
+      // ✅ Lấy session để kiểm tra role
+      const sessionRes = await fetch("/api/auth/session");
+      const session = await sessionRes.json();
+
+      if (session?.user?.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/");
+      }
+    } catch {
       setError("Lỗi server");
     } finally {
       setLoading(false);
     }
-  };
-
+};
   return (
     <div
       style={{
