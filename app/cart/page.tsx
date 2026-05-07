@@ -347,9 +347,9 @@ export default async function CartPage() {
             </div>
 
             <div className="mt-6 rounded-[24px] border border-white/10 bg-black/20 p-5">
-              <div className="text-sm font-semibold text-white">Luu y demo</div>
+              <div className="text-sm font-semibold text-white"></div>
               <p className="mt-2 text-sm leading-6 text-brand-muted">
-                Nut thanh toan se dua em sang trang PayPal mock cua du an de mo phong buoc checkout cuoi cung.
+                
               </p>
             </div>
 

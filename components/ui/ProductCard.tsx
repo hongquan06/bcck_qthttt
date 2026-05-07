@@ -4,7 +4,7 @@
 import { Product, formatPrice } from '../../lib/data'
 import { ShoppingCart, Star, Heart } from 'lucide-react'
 import { useProductModal } from '@/lib/ProductModalContext'
-import { useToast } from '@/components/ui/Toast' // ✅ import toast
+import { useToast } from '@/components/ui/Toast' 
 
 interface ProductCardProps {
   product: Product

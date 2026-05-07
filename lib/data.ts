@@ -1,5 +1,6 @@
+import { Product, Category, BannerSlide } from '@/types'
+
 export type { Product, Category, BannerSlide } from '@/types'
-import { Category, BannerSlide } from '@/types'
 
 export const categories: Category[] = [
   { id: '1', name: 'Điện thoại', icon: '📱', slug: 'dien-thoai' },
@@ -10,6 +11,129 @@ export const categories: Category[] = [
   { id: '6', name: 'Phụ kiện', icon: '🎧', slug: 'phu-kien' },
   { id: '7', name: 'Gia dụng', icon: '🏠', slug: 'gia-dung' },
   { id: '8', name: 'Sale', icon: '🔥', slug: 'sale' },
+]
+
+// ← THÊM LẠI 2 mảng này
+export const flashSaleProducts: Product[] = [
+  {
+    id: 'fs1',
+    name: 'iPhone 15 Pro Max',
+    price: 28990000,
+    originalPrice: 32990000,
+    discount: 12,
+    image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&h=400&fit=crop',
+    badge: 'HOT',
+    category: 'Điện thoại',
+    rating: 4.9,
+    sold: 2341,
+  },
+  {
+    id: 'fs2',
+    name: 'MacBook Air M2',
+    price: 24980000,
+    originalPrice: 28990000,
+    discount: 14,
+    image: 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=400&h=400&fit=crop',
+    badge: 'BEST',
+    category: 'Laptop',
+    rating: 4.8,
+    sold: 987,
+  },
+  {
+    id: 'fs3',
+    name: 'Samsung Galaxy S24',
+    price: 16990000,
+    originalPrice: 20990000,
+    discount: 19,
+    image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&h=400&fit=crop',
+    badge: 'NEW',
+    category: 'Điện thoại',
+    rating: 4.7,
+    sold: 1523,
+  },
+  {
+    id: 'fs4',
+    name: 'Xiaomi Watch S3',
+    price: 3890000,
+    originalPrice: 4990000,
+    discount: 22,
+    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop',
+    badge: '-22%',
+    category: 'Đồng hồ',
+    rating: 4.5,
+    sold: 834,
+  },
+  {
+    id: 'fs5',
+    name: 'iPad Pro M4',
+    price: 22990000,
+    originalPrice: 26990000,
+    discount: 15,
+    image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400&h=400&fit=crop',
+    badge: 'HOT',
+    category: 'Tablet',
+    rating: 4.9,
+    sold: 612,
+  },
+  {
+    id: 'fs6',
+    name: 'AirPods Pro 2',
+    price: 5990000,
+    originalPrice: 7490000,
+    discount: 20,
+    image: 'https://images.unsplash.com/photo-1606741965509-717ad89e6e3a?w=400&h=400&fit=crop',
+    badge: '-20%',
+    category: 'Phụ kiện',
+    rating: 4.8,
+    sold: 3201,
+  },
+]
+
+export const bestSellerProducts: Product[] = [
+  {
+    id: 'bs1',
+    name: 'iPhone 15',
+    price: 19990000,
+    originalPrice: 22990000,
+    discount: 13,
+    image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&h=400&fit=crop',
+    category: 'Điện thoại',
+    rating: 4.8,
+    sold: 5621,
+  },
+  {
+    id: 'bs2',
+    name: 'MacBook Pro M3',
+    price: 39990000,
+    originalPrice: 44990000,
+    discount: 11,
+    image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop',
+    category: 'Laptop',
+    rating: 4.9,
+    sold: 2341,
+  },
+  {
+    id: 'bs3',
+    name: 'Apple Watch S9',
+    price: 9990000,
+    originalPrice: 11990000,
+    discount: 17,
+    image: 'https://images.unsplash.com/photo-1551816230-ef5deaed4a26?w=400&h=400&fit=crop',
+    category: 'Đồng hồ',
+    rating: 4.7,
+    sold: 4102,
+  },
+  {
+    id: 'bs4',
+    name: 'Samsung Galaxy Tab S9',
+    price: 14990000,
+    originalPrice: 17990000,
+    discount: 17,
+    image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400&h=400&fit=crop',
+    category: 'Tablet',
+    rating: 4.6,
+    sold: 1834,
+  },
 ]
 
 export const bannerSlides: BannerSlide[] = [
@@ -35,7 +159,7 @@ export const bannerSlides: BannerSlide[] = [
   },
 ]
 
-export const navItems = [
+export const navItems: string[] = [
   'Điện thoại',
   'Laptop',
   'Máy tính bảng',
@@ -47,6 +171,6 @@ export const navItems = [
   'Khuyến mãi',
 ]
 
-export const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('vi-VN').format(price) + 'đ'
+export const formatPrice = (price: number | string): string => {
+  return new Intl.NumberFormat('vi-VN').format(Number(price)) + 'đ'
 }

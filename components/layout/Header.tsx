@@ -1,33 +1,64 @@
+// components/ui/Header.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Search, ShoppingCart, User, Menu, X, Bell, ChevronDown, Zap, LogOut } from 'lucide-react'
 import { navItems } from '../../lib/data'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+
+const POPULAR_TERMS = ['iPhone 15 Pro Max', 'MacBook Air M2', 'Samsung S24', 'AirPods Pro', 'Laptop Gaming']
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const [cartCount, setCartCount] = useState(0)
   const { data: session, status } = useSession()
+  const router = useRouter()
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const displayCartCount = status === 'authenticated' ? cartCount : 0
 
   useEffect(() => {
     if (status !== 'authenticated') return
-
     let cancelled = false
-
     fetch('/api/cart/count')
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (!cancelled && data?.count != null) setCartCount(data.count)
       })
       .catch(() => {})
-
     return () => { cancelled = true }
   }, [status])
+
+  // Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (inputRef.current && !inputRef.current.closest('.search-wrapper')?.contains(e.target as Node)) {
+        setSearchFocused(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // ✅ Submit tìm kiếm → chuyển sang /search?q=...
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault()
+    const q = searchQuery.trim()
+    if (!q) return
+    setSearchFocused(false)
+    router.push(`/search?q=${encodeURIComponent(q)}`)
+  }
+
+  // ✅ Click vào gợi ý
+  function handleSuggestion(term: string) {
+    setSearchQuery(term)
+    setSearchFocused(false)
+    router.push(`/search?q=${encodeURIComponent(term)}`)
+  }
 
   return (
     <header className="sticky top-0 z-50">
@@ -65,36 +96,61 @@ export default function Header() {
               </div>
             </Link>
 
-            {/* Search */}
-            <div className={`flex-1 max-w-xl relative transition-all duration-300 ${searchFocused ? 'max-w-2xl' : ''}`}>
+            {/* ✅ Search — có form submit */}
+            <form
+              onSubmit={handleSearch}
+              className={`search-wrapper flex-1 max-w-xl relative transition-all duration-300 ${searchFocused ? 'max-w-2xl' : ''}`}
+            >
               <div className={`flex items-center gap-2 rounded-xl px-4 py-2.5 border transition-all duration-200 ${
                 searchFocused
                   ? 'bg-brand-dark-3 border-brand-orange shadow-[0_0_0_3px_rgba(255,107,0,0.15)]'
                   : 'bg-brand-dark-3 border-white/10 hover:border-white/20'
               }`}>
-                <Search size={16} className={`shrink-0 transition-colors ${searchFocused ? 'text-brand-orange' : 'text-brand-muted'}`} />
+                <button type="submit" className="shrink-0">
+                  <Search size={16} className={`transition-colors ${searchFocused ? 'text-brand-orange' : 'text-brand-muted'}`} />
+                </button>
                 <input
+                  ref={inputRef}
                   type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Tìm điện thoại, laptop, phụ kiện..."
                   onFocus={() => setSearchFocused(true)}
-                  onBlur={() => setSearchFocused(false)}
                   className="flex-1 bg-transparent text-sm text-brand-text placeholder:text-brand-muted outline-none min-w-0"
                 />
+                {/* Xóa text */}
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="text-brand-muted hover:text-white transition shrink-0"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
                 <kbd className="hidden sm:flex items-center gap-1 text-[10px] text-brand-muted bg-white/5 px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
               </div>
 
+              {/* Dropdown gợi ý */}
               {searchFocused && (
-                <div className="absolute top-full mt-2 left-0 right-0 bg-brand-dark-2 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
-                  <div className="px-4 py-2 text-[11px] font-semibold text-brand-muted uppercase tracking-widest">Tìm kiếm phổ biến</div>
-                  {['iPhone 15 Pro Max', 'MacBook Air M2', 'Samsung S24', 'AirPods Pro'].map(term => (
-                    <div key={term} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 cursor-pointer">
-                      <Zap size={13} className="text-brand-orange" />
+                <div className="absolute top-full mt-2 left-0 right-0 bg-brand-dark-2 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                  <div className="px-4 py-2 text-[11px] font-semibold text-brand-muted uppercase tracking-widest">
+                    Tìm kiếm phổ biến
+                  </div>
+                  {POPULAR_TERMS.map(term => (
+                    <button
+                      key={term}
+                      type="button"
+                      onMouseDown={() => handleSuggestion(term)} // dùng mouseDown để không bị blur trước
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 cursor-pointer text-left"
+                    >
+                      <Zap size={13} className="text-brand-orange shrink-0" />
                       <span className="text-sm text-brand-text">{term}</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
-            </div>
+            </form>
 
             {/* Right actions */}
             <div className="flex items-center gap-1 ml-auto">

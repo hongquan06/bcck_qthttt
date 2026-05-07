@@ -5,6 +5,7 @@ export interface Product {
   originalPrice: number
   discount: number
   image: string
+  image_url?: string 
   badge?: string
   rating?: number
   sold?: number
