@@ -33,7 +33,27 @@ const statusMap = {
     description: 'Hay kiem tra lai ten, gia ban va ton kho truoc khi gui.',
     className: 'border-l-4 border-l-red-500 border border-red-500/20 bg-red-500/10 text-red-200',
   },
+  order_updated: {
+    title: '✅ Da cap nhat trang thai don hang',
+    description: 'Trang thai don hang da duoc luu thanh cong. Khach hang se thay ngay.',
+    className: 'border-l-4 border-l-emerald-500 border border-emerald-500/20 bg-emerald-500/10 text-emerald-200',
+  },
+  order_invalid: {
+    title: '⚠️ Khong the cap nhat don hang',
+    description: 'Trang thai khong hop le hoac don hang khong ton tai.',
+    className: 'border-l-4 border-l-red-500 border border-red-500/20 bg-red-500/10 text-red-200',
+  },
 } as const
+
+const orderStatusConfig: Record<string, { label: string; color: string }> = {
+  pending:   { label: 'Chờ xác nhận', color: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
+  paid:      { label: 'Đã thanh toán', color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
+  shipped:   { label: 'Đang giao',     color: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
+  completed: { label: 'Hoàn thành',   color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' },
+  cancelled: { label: 'Đã hủy',       color: 'text-red-400 bg-red-400/10 border-red-400/20' },
+}
+
+const ORDER_STATUSES = ['pending', 'paid', 'shipped', 'completed', 'cancelled']
 
 function getFirstValue(value?: string | string[]) {
   if (Array.isArray(value)) return value[0]
@@ -81,6 +101,17 @@ function formatDate(date: Date | null | undefined) {
   }).format(date)
 }
 
+function formatDateTime(date: Date | null | undefined) {
+  if (!date) return ''
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
 async function createProduct(formData: FormData) {
   'use server'
   const name = normalizeText(formData.get('name'))
@@ -114,6 +145,19 @@ async function removeProduct(productId: number) {
   redirect('/admin?status=removed')
 }
 
+async function updateOrderStatus(orderId: number, formData: FormData) {
+  'use server'
+  const newStatus = normalizeText(formData.get('status'))
+  if (!ORDER_STATUSES.includes(newStatus)) redirect('/admin?status=order_invalid')
+  await prisma.orders.update({
+    where: { id: orderId },
+    data: { status: newStatus as 'pending' | 'paid' | 'shipped' | 'completed' | 'cancelled' },
+  })
+  revalidatePath('/admin')
+  revalidatePath('/orders') // cập nhật trang lịch sử đơn hàng của khách
+  redirect('/admin?status=order_updated')
+}
+
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   await connection()
 
@@ -123,6 +167,18 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
   const products = await prisma.products.findMany({
     orderBy: [{ stock: 'asc' }, { created_at: 'desc' }],
+  })
+
+  const orders = await prisma.orders.findMany({
+    orderBy: { created_at: 'desc' },
+    include: {
+      order_items: {
+        include: { products: true },
+      },
+      users: {
+        select: { name: true, email: true },
+      },
+    },
   })
 
   const inventory = products.map((product) => {
@@ -141,6 +197,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const lowStockProducts = inventory.filter((p) => p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD)
   const activeProducts = inventory.filter((p) => p.stock > LOW_STOCK_THRESHOLD)
   const totalUnits = inventory.reduce((sum, p) => sum + p.stock, 0)
+
+  // Thống kê đơn hàng
+  const totalOrders = orders.length
+  const pendingOrders = orders.filter((o) => o.status === 'pending').length
+  const shippedOrders = orders.filter((o) => o.status === 'shipped').length
+  const completedOrders = orders.filter((o) => o.status === 'completed').length
 
   return (
     <main className="min-h-screen bg-brand-dark text-white">
@@ -186,7 +248,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               </p>
             </div>
 
-            {/* Stats grid */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:shrink-0">
               {[
                 { label: 'Tong SKU', value: totalProducts, color: 'text-white' },
@@ -208,7 +269,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
           {/* Canh bao ton kho */}
           <section className="rounded-2xl border border-white/10 bg-brand-dark-2">
-            {/* Header */}
             <div className="flex items-center justify-between border-b border-white/8 px-6 py-4">
               <div>
                 <h2 className="font-display text-lg font-bold text-white">⚠️ Can xu ly ngay</h2>
@@ -220,7 +280,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             </div>
 
             <div className="grid gap-4 p-6 lg:grid-cols-2">
-              {/* Het hang */}
               <div className="rounded-xl border border-red-500/25 bg-red-500/5">
                 <div className="flex items-center justify-between border-b border-red-500/15 px-4 py-3">
                   <h3 className="text-sm font-semibold text-red-300">Het hang</h3>
@@ -248,7 +307,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 </div>
               </div>
 
-              {/* Sap het */}
               <div className="rounded-xl border border-amber-500/25 bg-amber-500/5">
                 <div className="flex items-center justify-between border-b border-amber-500/15 px-4 py-3">
                   <h3 className="text-sm font-semibold text-amber-300">Sap het hang</h3>
@@ -353,9 +411,113 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           </section>
         </div>
 
+        {/* ── Quản lý đơn hàng ── */}
+        <section className="rounded-2xl border border-white/10 bg-brand-dark-2">
+          {/* Header + stats */}
+          <div className="flex flex-col gap-4 border-b border-white/8 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-display text-lg font-bold text-white">🛒 Quan ly don hang</h2>
+              <p className="mt-0.5 text-xs text-brand-muted">Cap nhat trang thai don hang cho khach</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: 'Tong', value: totalOrders, color: 'text-white border-white/10 bg-white/5' },
+                { label: 'Cho xac nhan', value: pendingOrders, color: 'text-amber-400 border-amber-400/20 bg-amber-400/5' },
+                { label: 'Dang giao', value: shippedOrders, color: 'text-purple-400 border-purple-400/20 bg-purple-400/5' },
+                { label: 'Hoan thanh', value: completedOrders, color: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5' },
+              ].map((s) => (
+                <div key={s.label} className={`rounded-xl border px-3 py-1.5 text-center ${s.color}`}>
+                  <div className="text-[10px] uppercase tracking-widest opacity-70">{s.label}</div>
+                  <div className="text-sm font-bold">{s.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="divide-y divide-white/5">
+            {orders.length === 0 ? (
+              <div className="px-6 py-16 text-center">
+                <div className="text-4xl mb-3">🛒</div>
+                <p className="text-brand-muted text-sm">Chua co don hang nao.</p>
+              </div>
+            ) : (
+              orders.map((order) => {
+                const st = orderStatusConfig[order.status ?? 'pending'] ?? orderStatusConfig.pending
+                const totalPrice = Number(order.total_price ?? 0)
+
+                return (
+                  <article key={order.id} className="px-6 py-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+
+                      {/* Thong tin don hang */}
+                      <div className="flex flex-col gap-2 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-bold text-white">Don #{order.id}</span>
+                          <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${st.color}`}>
+                            {st.label}
+                          </span>
+                        </div>
+
+                        {/* Khach hang */}
+                        <div className="text-xs text-brand-muted">
+                          <span className="text-white/70">{order.users?.name ?? 'Khach hang'}</span>
+                          {order.users?.email && (
+                            <span className="ml-1.5 opacity-50">· {order.users.email}</span>
+                          )}
+                        </div>
+
+                        {/* San pham trong don */}
+                        <div className="flex flex-col gap-1">
+                          {order.order_items.map((item) => (
+                            <div key={item.id} className="text-xs text-brand-muted">
+                              · {item.products?.name ?? 'San pham da xoa'}{' '}
+                              <span className="text-white/50">x{item.quantity}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center gap-3 text-xs text-brand-muted">
+                          <span className="font-bold text-brand-orange">
+                            {new Intl.NumberFormat('vi-VN').format(totalPrice)}đ
+                          </span>
+                          <span>·</span>
+                          <span>{formatDateTime(order.created_at)}</span>
+                        </div>
+                      </div>
+
+                      {/* Form cap nhat trang thai */}
+                      <form
+                        action={updateOrderStatus.bind(null, order.id)}
+                        className="flex shrink-0 items-center gap-2"
+                      >
+                        <select
+                          name="status"
+                          defaultValue={order.status ?? 'pending'}
+                          className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none transition focus:border-brand-orange cursor-pointer"
+                        >
+                          <option value="pending">Chờ xác nhận</option>
+                          <option value="paid">Đã thanh toán</option>
+                          <option value="shipped">Đang giao</option>
+                          <option value="completed">Hoàn thành</option>
+                          <option value="cancelled">Đã hủy</option>
+                        </select>
+                        <button
+                          type="submit"
+                          className="rounded-xl bg-brand-orange px-4 py-2 text-xs font-bold text-black transition hover:opacity-90 active:scale-[0.98] whitespace-nowrap"
+                        >
+                          Cập nhật
+                        </button>
+                      </form>
+                    </div>
+                  </article>
+                )
+              })
+            )}
+          </div>
+        </section>
+
         {/* ── Danh sach san pham ── */}
         <section className="rounded-2xl border border-white/10 bg-brand-dark-2">
-          {/* Header */}
           <div className="flex items-center justify-between border-b border-white/8 px-6 py-4">
             <div>
               <h2 className="font-display text-lg font-bold text-white">📦 Danh sach hang hoa</h2>
@@ -387,9 +549,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                     id={`product-${product.id}`}
                     className="grid gap-6 px-6 py-5 xl:grid-cols-[1fr_380px]"
                   >
-                    {/* ── Left: product info ── */}
                     <div className="flex flex-col gap-4">
-                      {/* Title row */}
                       <div className="flex flex-wrap items-center gap-2">
                         {product.image_url && (
                           <img
@@ -411,7 +571,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         </div>
                       </div>
 
-                      {/* Stats row */}
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                         <div className="rounded-xl border border-white/8 bg-black/20 px-3 py-2.5">
                           <div className="text-[10px] uppercase tracking-widest text-brand-muted">Gia ban</div>
@@ -435,7 +594,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         </div>
                       </div>
 
-                      {/* Description */}
                       <div className="rounded-xl border border-white/8 bg-black/10 px-4 py-3">
                         <div className="text-[10px] uppercase tracking-widest text-brand-muted">Mo ta</div>
                         <p className="mt-1 text-sm leading-5 text-white/70">
@@ -444,7 +602,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                       </div>
                     </div>
 
-                    {/* ── Right: edit form ── */}
                     <div className="rounded-xl border border-white/10 bg-black/20">
                       <details className="group">
                         <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3">
