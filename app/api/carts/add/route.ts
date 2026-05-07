@@ -1,22 +1,19 @@
 import { prisma } from "@/lib/prisma";
-import { verifyToken } from "@/lib/auth";
 import { getOrCreateCart } from "@/lib/cart";
 import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-// POST /api/cart/add — Thêm sản phẩm vào giỏ hàng (hỗ trợ cả guest)
 export async function POST(req: Request) {
   try {
     const cookieStore = await cookies();
 
-    // Thử lấy user từ token (không throw nếu chưa login)
+    // ✅ Dùng getServerSession thay vì verifyToken
     let userId: number | null = null;
-    try {
-      const decoded = verifyToken(req);
-      userId = decoded.id;
-    } catch {
-      userId = null; // Guest
-    }
+    const session = await getServerSession(authOptions);
+    const id = Number(session?.user?.id);
+    if (!isNaN(id) && id > 0) userId = id;
 
     // Lấy hoặc tạo sessionId cho guest
     let sessionId = cookieStore.get("session_id")?.value ?? null;
@@ -34,7 +31,6 @@ export async function POST(req: Request) {
       return new Response("quantity phải là số nguyên >= 1", { status: 400 });
     }
 
-    // Kiểm tra sản phẩm tồn tại
     const product = await prisma.products.findUnique({
       where: { id: product_id },
     });
@@ -43,15 +39,12 @@ export async function POST(req: Request) {
       return new Response("Product not found", { status: 404 });
     }
 
-    // Kiểm tra tồn kho
     if ((product.stock ?? 0) < quantity) {
       return new Response("Không đủ hàng trong kho", { status: 400 });
     }
 
-    // Lấy hoặc tạo giỏ hàng (theo userId hoặc sessionId)
     const cart = await getOrCreateCart(userId ?? undefined, sessionId ?? undefined);
 
-    // Nếu sản phẩm đã có trong giỏ → cộng thêm số lượng
     const existingItem = await prisma.cart_items.findFirst({
       where: { cart_id: cart.id, product_id },
     });
@@ -75,7 +68,6 @@ export async function POST(req: Request) {
         cart_item: updated,
       };
     } else {
-      // Chưa có → thêm mới
       const cartItem = await prisma.cart_items.create({
         data: { cart_id: cart.id, product_id, quantity },
       });
@@ -86,11 +78,11 @@ export async function POST(req: Request) {
       };
     }
 
-    // Gắn cookie session_id cho guest
     const res = Response.json(responseBody, {
       status: existingItem ? 200 : 201,
     });
 
+    // Gắn cookie session_id cho guest
     if (!userId && sessionId) {
       res.headers.set(
         "Set-Cookie",
