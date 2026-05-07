@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { orders_status } from '@prisma/client'
 
 type AdminPageProps = {
   searchParams: Promise<{
@@ -151,7 +152,7 @@ async function updateOrderStatus(orderId: number, formData: FormData) {
   if (!ORDER_STATUSES.includes(newStatus)) redirect('/admin?status=order_invalid')
   await prisma.orders.update({
     where: { id: orderId },
-    data: { status: newStatus as 'pending' | 'paid' | 'shipped' | 'completed' | 'cancelled' },
+    data: { status: newStatus as orders_status },
   })
   revalidatePath('/admin')
   revalidatePath('/orders') // cập nhật trang lịch sử đơn hàng của khách
@@ -176,7 +177,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         include: { products: true },
       },
       users: {
-        select: { name: true, email: true },
+        select: { email: true },
       },
     },
   })
@@ -460,10 +461,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
                         {/* Khach hang */}
                         <div className="text-xs text-brand-muted">
-                          <span className="text-white/70">{order.users?.name ?? 'Khach hang'}</span>
-                          {order.users?.email && (
-                            <span className="ml-1.5 opacity-50">· {order.users.email}</span>
-                          )}
+                          <span className="text-white/70">{order.users?.email ?? 'Khach hang'}</span>
                         </div>
 
                         {/* San pham trong don */}
